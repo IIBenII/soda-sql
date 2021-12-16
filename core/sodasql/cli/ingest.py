@@ -297,6 +297,9 @@ def ingest(
     dbt_artifacts: Path | None = None,
     dbt_manifest: Path | None = None,
     dbt_run_results: Path | None = None,
+    dbt_cloud_api_token: str | None = None,
+    dbt_cloud_account_id: str | None = None,
+    dbt_cloud_run_id: str | None = None,
 ) -> None:
     """
     Ingest test information from different tools.
@@ -314,6 +317,12 @@ def ingest(
         The path to the dbt manifest.
     dbt_run_results : Optional[Path]
         The path to the dbt run results.
+    dbt_cloud_api_token : str
+        The DBT cloud API token.
+    dbt_cloud_account_id: str :
+        The id of a DBT cloud account.
+    dbt_cloud_run_id :  str
+        The id of a job run in the DBT cloud.
 
     Raises
     ------
@@ -331,14 +340,34 @@ def ingest(
         raise ValueError("Missing Soda cloud api key id and/or secret.")
 
     if tool == "dbt":
-        manifest, run_results = load_dbt_artifacts(
-            dbt_artifacts,
-            dbt_manifest,
-            dbt_run_results,
-        )
-        test_results_iterator = map_dbt_test_results_iterator(
-            manifest, run_results
-        )
+        if (
+            dbt_artifacts is not None
+            or dbt_manifest is not None
+            or dbt_run_results is not None
+        ):
+            manifest, run_results = load_dbt_artifacts(
+                dbt_artifacts,
+                dbt_manifest,
+                dbt_run_results,
+            )
+        else:
+            if dbt_cloud_api_token is None:
+                raise ValueError(
+                    f"Expecting an DBT cloud api token. Currently, dbt_cloud_api_token={dbt_cloud_api_token}."
+                )
+            elif dbt_cloud_account_id is None:
+                raise ValueError(
+                    f"Expecting an DBT cloud api token. Currently, dbt_cloud_account_id={dbt_cloud_account_id}."
+                )
+            elif dbt_cloud_run_id is None:
+                raise ValueError(
+                    f"Expecting an DBT cloud api token. Currently, dbt_cloud_run_id={dbt_cloud_run_id}."
+                )
+            manifest, run_results = download_dbt_artifacts_from_cloud(
+                dbt_cloud_api_token, dbt_cloud_account_id, dbt_cloud_run_id
+            )
+
+        test_results_iterator = map_dbt_test_results_iterator(manifest, run_results)
     else:
         raise NotImplementedError(f"Unknown tool: {tool}")
 
