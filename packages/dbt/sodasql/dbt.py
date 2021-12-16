@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from functools import reduce
 from operator import or_
@@ -56,9 +57,11 @@ def parse_manifest(
     ------
     https://docs.getdbt.com/reference/artifacts/manifest-json
     """
+    logger = logging.getLogger(__name__)
+
     dbt_v4_schema = "https://schemas.getdbt.com/dbt/manifest/v4.json"
     if manifest["metadata"]["dbt_schema_version"] != dbt_v4_schema:
-        raise NotImplementedError("Dbt manifest parsing only supported for V4 schema.")
+        logger.warning("Dbt manifest parsing only tested for v4 schema.")
 
     model_nodes = {
         node_name: CompiledModelNode(**node)
@@ -107,9 +110,11 @@ def parse_run_results(run_results: dict[str, Any]) -> list[RunResultOutput]:
     ------
     https://docs.getdbt.com/reference/artifacts/run-results-json
     """
+    logger = logging.getLogger(__name__)
+
     dbt_v4_schema = "https://schemas.getdbt.com/dbt/run-results/v4.json"
     if run_results["metadata"]["dbt_schema_version"] != dbt_v4_schema:
-        raise NotImplementedError("Dbt run results parsing only supported for v4 schema.")
+        logger.warning("Dbt run results parsing only tested for v4 schema.")
 
     parsed_run_results = [RunResultOutput(**result) for result in run_results["results"]]
     return parsed_run_results
