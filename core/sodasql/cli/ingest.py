@@ -10,7 +10,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Iterator, Optional, Tuple
+from typing import Iterator
 
 from sodasql.__version__ import SODA_SQL_VERSION
 from sodasql.scan.scan_builder import (
@@ -78,17 +78,17 @@ def map_dbt_run_result_to_test_result(
 
 
 def map_dbt_test_results_iterator(
-    manifest_file: Path, run_results_file: Path
+    manifest: dict, run_results: dict
 ) -> Iterator[tuple[Table, list[TestResult]]]:
     """
     Create an iterator for the dbt test results.
 
     Parameters
     ----------
-    manifest_file : Path
-        The path to the manifest file.
-    run_results_file : Path
-        The path to the run results file.
+    manifest : dict
+        The manifest.
+    run_results : dict
+        The run results
 
     Returns
     -------
@@ -102,14 +102,11 @@ def map_dbt_test_results_iterator(
             "Soda SQL dbt extension is not installed: $ pip install soda-sql-dbt"
         ) from e
 
-    with manifest_file.open("r") as file:
-        manifest = json.load(file)
-    with run_results_file.open("r") as file:
-        run_results = json.load(file)
-
     model_nodes, seed_nodes, test_nodes = soda_dbt.parse_manifest(manifest)
     parsed_run_results = soda_dbt.parse_run_results(run_results)
-    tests_with_test_result = map_dbt_run_result_to_test_result(test_nodes, parsed_run_results)
+    tests_with_test_result = map_dbt_run_result_to_test_result(
+        test_nodes, parsed_run_results
+    )
     model_and_seed_nodes = {**model_nodes, **seed_nodes}
     models_with_tests = soda_dbt.create_nodes_to_tests_mapping(
         model_and_seed_nodes, test_nodes, parsed_run_results
@@ -151,7 +148,9 @@ def flush_test_results(
     """
     for table, test_results in test_results_iterator:
         test_results_jsons = [
-            test_result.to_dict() for test_result in test_results if not test_result.skipped
+            test_result.to_dict()
+            for test_result in test_results
+            if not test_result.skipped
         ]
         if len(test_results_jsons) == 0:
             continue
@@ -172,25 +171,51 @@ def flush_test_results(
         soda_server_client.scan_ended(start_scan_response["scanReference"])
 
 
-def resolve_artifacts_paths(
-    dbt_artifacts: Optional[Path] = None,
-    dbt_manifest: Optional[Path] = None,
-    dbt_run_results: Optional[Path] = None
-) -> Tuple[Path, Path]:
-    if dbt_artifacts:
-        dbt_manifest = Path(dbt_artifacts) / 'manifest.json'
-        dbt_run_results = Path(dbt_artifacts) / 'run_results.json'
-    elif dbt_manifest is None:
+def load_dbt_artifacts(
+    artifacts_dir: Path | None = None,
+    manifest_file: Path | None = None,
+    run_results_file: Path | None = None,
+) -> tuple[dict, dict]:
+    """
+    Resolve artifacts.
+
+    Arguments
+    ---------
+    artifacts_dir : Path | None
+        The artifacts directory.
+    manifest_file : Path | None
+        The manifest file.
+    run_results_file : Path | None
+        The run results file.
+
+    Return
+    ------
+    out : tuple[dict, dict]
+        The loaded manifest and run results.
+    """
+    if artifacts_dir is not None:
+        manifest_file = artifacts_dir / "manifest.json"
+        run_results_file = artifacts_dir / "run_results.json"
+
+    if manifest_file is None or not manifest_file.is_file():
         raise ValueError(
-            "--dbt-manifest or --dbt-artifacts are required. "
-            f"Currently, dbt_manifest={dbt_manifest} and dbt_artifacts={dbt_artifacts}"
+            "--dbt-manifest or --dbt-artifacts are required to point to an  "
+            f"existing path. Currently, dbt_manifest={dbt_manifest} and "
+            f"dbt_artifacts={dbt_artifacts}"
         )
-    elif dbt_run_results is None:
+    elif run_results_file is None or not run_results_file.is_file():
         raise ValueError(
-            "--dbt-run-results or --dbt-artifacts are required. "
-            f"Currently, dbt_run_results={dbt_manifest} and dbt_artifacts={dbt_artifacts}"
+            "--dbt-run-results or --dbt-artifacts are required to point to an  "
+            f"existing path. Currently, dbt_run_results={dbt_run_results} and "
+            f"dbt_artifacts={dbt_artifacts}"
         )
-    return dbt_manifest, dbt_run_results
+
+    with manifest_file.open("r") as file:
+        manifest = json.load(file)
+    with run_results_file.open("r") as file:
+        run_results = json.load(file)
+
+    return manifest, run_results
 
 
 def ingest(
@@ -232,13 +257,15 @@ def ingest(
     if not soda_server_client.api_key_id or not soda_server_client.api_key_secret:
         raise ValueError("Missing Soda cloud api key id and/or secret.")
 
-    if tool == 'dbt':
-        dbt_manifest, dbt_run_results = resolve_artifacts_paths(
-            dbt_artifacts=dbt_artifacts,
-            dbt_manifest=dbt_manifest,
-            dbt_run_results=dbt_run_results
+    if tool == "dbt":
+        manifest, run_results = load_dbt_artifacts(
+            dbt_artifacts,
+            dbt_manifest,
+            dbt_run_results,
         )
-        test_results_iterator = map_dbt_test_results_iterator(dbt_manifest, dbt_run_results)
+        test_results_iterator = map_dbt_test_results_iterator(
+            manifest, run_results
+        )
     else:
         raise NotImplementedError(f"Unknown tool: {tool}")
 
