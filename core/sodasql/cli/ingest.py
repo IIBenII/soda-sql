@@ -260,6 +260,37 @@ def download_dbt_artifact_from_cloud(
     return response
 
 
+def download_dbt_artifacts_from_cloud(
+    api_token: str,
+    account_id: str,
+    run_id: str,
+) -> tuple[dict, dict]:
+    """
+    Download the dbt artifacts from the cloud.
+
+    Parameters
+    ----------
+    api_token : str
+        The dbt cloud API token.
+    account_id : str
+        The account id.
+    run_id :  str
+        The run id.
+
+    Returns
+    -------
+    out : tuple[dict, dict]
+        The loaded artifacts.
+    """
+    manifest = download_dbt_artifact_from_cloud(
+        "manifest.json", api_token, account_id, run_id
+    )
+    run_results = download_dbt_artifact_from_cloud(
+        "run_results.json", api_token, account_id, run_id
+    )
+    return manifest, run_results
+
+
 def ingest(
     tool: str,
     warehouse_yml_file: str,
