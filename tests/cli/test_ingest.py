@@ -6,7 +6,6 @@ from typing import Any
 import pytest
 
 from sodasql.cli import ingest
-from sodasql.cli.ingest import resolve_artifacts_paths
 from tests.common.mock_soda_server_client import MockSodaServerClient
 
 
@@ -27,14 +26,14 @@ def mock_soda_server_client() -> MockSodaServerClient:
     "command_type", ["sodaSqlScanStart", "sodaSqlScanTestResults", "sodaSqlScanEnd"]
 )
 def test_dbt_flush_test_results_soda_server_has_command_types(
-    dbt_manifest_file: Path,
-    dbt_run_results_file: Path,
+    dbt_manifest: dict,
+    dbt_run_results: dict,
     mock_soda_server_client: MockSodaServerClient,
     command_type: str,
 ) -> None:
     """Validate that the flush test results has the expected command types."""
     test_results_iterator = ingest.map_dbt_test_results_iterator(
-        dbt_manifest_file, dbt_run_results_file
+        dbt_manifest, dbt_run_results
     )
     ingest.flush_test_results(
         test_results_iterator,
@@ -49,13 +48,13 @@ def test_dbt_flush_test_results_soda_server_has_command_types(
 
 
 def test_dbt_flush_test_results_soda_server_scan_numbertest_result(
-    dbt_manifest_file: Path,
-    dbt_run_results_file: Path,
+    dbt_manifest: dict,
+    dbt_run_results: dict,
     mock_soda_server_client: MockSodaServerClient,
 ) -> None:
     """Validate if we have the expected number of test results."""
     test_results_iterator = ingest.map_dbt_test_results_iterator(
-        dbt_manifest_file, dbt_run_results_file
+        dbt_manifest, dbt_run_results
     )
     ingest.flush_test_results(
         test_results_iterator,
@@ -80,12 +79,12 @@ def test_dbt_flush_test_results_soda_server_scan_numbertest_result(
         ("skipped", False),
         ("values", {"failures": 0}),
         ("columnName", "result"),
-        ('source', 'dbt'),
+        ("source", "dbt"),
     ],
 )
 def test_dbt_flush_test_results_soda_server_scan_test_result(
-    dbt_manifest_file: Path,
-    dbt_run_results_file: Path,
+    dbt_manifest: dict,
+    dbt_run_results: dict,
     mock_soda_server_client: MockSodaServerClient,
     column: str,
     value: Any,
@@ -94,7 +93,7 @@ def test_dbt_flush_test_results_soda_server_scan_test_result(
     id = "test.soda.accepted_values_stg_soda__scan__result__pass_fail.81f"
 
     test_results_iterator = ingest.map_dbt_test_results_iterator(
-        dbt_manifest_file, dbt_run_results_file
+        dbt_manifest, dbt_run_results
     )
     ingest.flush_test_results(
         test_results_iterator,
@@ -118,53 +117,26 @@ def test_dbt_flush_test_results_soda_server_scan_test_result(
 
 
 @pytest.mark.parametrize(
-    "dbt_artifacts, dbt_manifest, dbt_run_results, expectation",
-    [
-        pytest.param(
-            Path('my_dbt_project/target/'),
-            "",
-            "",
-            [
-                Path('my_dbt_project/target/manifest.json'),
-                Path('my_dbt_project/target/run_results.json'),
-            ],
-            id="dbt_artifacts path provided, others null"
-        ),
-        pytest.param(
-            Path('my_dbt_project/target/'),
-            Path('my_dbt_project/path_to_ignore'),
-            Path('my_dbt_project/path_to_ignore'),
-            [
-                Path('my_dbt_project/target/manifest.json'),
-                Path('my_dbt_project/target/run_results.json'),
-            ],
-            id="dbt_artifacts path provided, others provided, but should be ignored"
-        ),
-    ]
-)
-def test_resolve_artifacts_paths(dbt_artifacts, dbt_manifest, dbt_run_results, expectation):
-    dbt_manifest, dbt_run_results = resolve_artifacts_paths(dbt_artifacts, dbt_manifest, dbt_run_results)
-    assert dbt_manifest == expectation[0]
-    assert dbt_run_results == expectation[1]
-
-
-@pytest.mark.parametrize(
     "dbt_artifacts, dbt_manifest, dbt_run_results",
     [
         pytest.param(
-            "",
-            "",
-            Path('my_dbt_project/target/run_results.json'),
+            None,
+            None,
+            Path("my_dbt_project/target/run_results.json"),
             id="missing dbt_manifest and artifact",
         ),
         pytest.param(
-            "",
-            Path('my_dbt_project/target/run_results.json'),
-            "",
+            None,
+            Path("my_dbt_project/target/manifest.json"),
+            None,
             id="missing dbt_run_results and artifact",
         ),
-    ]
+    ],
 )
-def test_resolve_artifacts_paths_missing_paths(dbt_artifacts, dbt_manifest, dbt_run_results):
+def test_resolve_artifacts_paths_missing_paths(
+    dbt_artifacts, dbt_manifest, dbt_run_results
+):
     with pytest.raises(ValueError):
-        dbt_manifest, dbt_run_results = resolve_artifacts_paths(dbt_artifacts, dbt_manifest, dbt_run_results)
+        dbt_manifest, dbt_run_results = ingest.load_dbt_artifacts(
+            dbt_artifacts, dbt_manifest, dbt_run_results
+        )

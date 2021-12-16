@@ -202,14 +202,14 @@ def load_dbt_artifacts(
     if manifest_file is None or not manifest_file.is_file():
         raise ValueError(
             "--dbt-manifest or --dbt-artifacts are required to point to an  "
-            f"existing path. Currently, dbt_manifest={dbt_manifest} and "
-            f"dbt_artifacts={dbt_artifacts}"
+            f"existing path. Currently, dbt_manifest={manifest_file} and "
+            f"dbt_artifacts={artifacts_dir}"
         )
     elif run_results_file is None or not run_results_file.is_file():
         raise ValueError(
             "--dbt-run-results or --dbt-artifacts are required to point to an  "
-            f"existing path. Currently, dbt_run_results={dbt_run_results} and "
-            f"dbt_artifacts={dbt_artifacts}"
+            f"existing path. Currently, dbt_run_results={run_results_file} and "
+            f"dbt_artifacts={artifacts_dir}"
         )
 
     with manifest_file.open("r") as file:
