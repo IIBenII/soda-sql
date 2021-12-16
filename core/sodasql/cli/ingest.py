@@ -249,7 +249,7 @@ def download_dbt_artifact_from_cloud(
     -------
     https://docs.getdbt.com/dbt-cloud/api-v2#operation/getArtifactsByRunId
     """
-    url = "https://cloud.getdbt.com/api/v2/accounts/{account_id}/runs/{run_id}/artifacts/{artifact}"
+    url = f"https://cloud.getdbt.com/api/v2/accounts/{account_id}/runs/{run_id}/artifacts/{artifact}"
 
     headers = CaseInsensitiveDict()
     headers["Authorization"] = f"Token {api_token}"
@@ -257,7 +257,10 @@ def download_dbt_artifact_from_cloud(
 
     response = requests.get(url, headers=headers)
 
-    return response
+    if response.status_code != requests.codes.ok:
+        response.raise_for_status()
+
+    return response.json()
 
 
 def download_dbt_artifacts_from_cloud(
