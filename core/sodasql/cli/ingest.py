@@ -9,8 +9,10 @@ import datetime as dt
 import json
 import logging
 import os
+import requests
 from pathlib import Path
 from typing import Iterator
+from requests.structures import CaseInsensitiveDict
 
 from sodasql.__version__ import SODA_SQL_VERSION
 from sodasql.scan.scan_builder import (
@@ -216,6 +218,46 @@ def load_dbt_artifacts(
         run_results = json.load(file)
 
     return manifest, run_results
+
+
+def download_dbt_artifact_from_cloud(
+    artifact: str,
+    api_token: str,
+    account_id: str,
+    run_id: str,
+) -> dict():
+    """
+    Download an artifact from the DBT cloud.
+
+    Parameters
+    ----------
+    artifact : str
+        The artifact name.
+    api_token : str
+        The dbt cloud API token.
+    account_id: str :
+        The account id.
+    run_id :  str
+        The run id.
+
+    Returns
+    -------
+    out : dict
+        The artifact.
+
+    Sources
+    -------
+    https://docs.getdbt.com/dbt-cloud/api-v2#operation/getArtifactsByRunId
+    """
+    url = "https://cloud.getdbt.com/api/v2/accounts/{account_id}/runs/{run_id}/artifacts/{artifact}"
+
+    headers = CaseInsensitiveDict()
+    headers["Authorization"] = f"Token {api_token}"
+    headers["Content-Type"] = "application/json"
+
+    response = requests.get(url, headers=headers)
+
+    return response
 
 
 def ingest(
