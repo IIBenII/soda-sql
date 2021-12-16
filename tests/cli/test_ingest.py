@@ -1,9 +1,13 @@
 """Test the ingest module."""
 
+from __future__ import annotations
+
+import requests
 from pathlib import Path
 from typing import Any
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from sodasql.cli import ingest
 from tests.common.mock_soda_server_client import MockSodaServerClient
@@ -140,3 +144,55 @@ def test_resolve_artifacts_paths_missing_paths(
         dbt_manifest, dbt_run_results = ingest.load_dbt_artifacts(
             dbt_artifacts, dbt_manifest, dbt_run_results
         )
+
+
+@pytest.fixture
+def mock_dbt_cloud_response(
+    monkeypatch: MonkeyPatch,
+    dbt_manifest_file: Path,
+    dbt_run_results_file: Path,
+) -> None:
+    """
+    Mock the dbt cloud response.
+
+    Parameters
+    ----------
+    monkeypatch : MonkeyPatch
+        The monkey patch fixture.
+    dbt_manifest_file : Path
+        The path to the manifest file.
+    dbt_run_results_file : Path
+        The path to the run results file.
+    """
+
+    def get(url: str, headers: dict | None = None):
+        """Mock the requests.get method."""
+        response = requests.Response()
+        if "manifest.json" in url:
+            file = dbt_manifest_file
+        elif "run_results.json" in url:
+            file = dbt_run_results_file
+        else:
+            raise ValueError(f"Unrecognized url: {url}")
+
+        with file.open("rb") as f:
+            response._content = f.read()
+
+        response.status_code = requests.codes.ok
+        return response
+
+    monkeypatch.setattr(requests, "get", get)
+
+
+def test_download_dbt_artifacts_from_cloud(
+    mock_dbt_cloud_response: None,
+    dbt_manifest: dict,
+    dbt_run_results: dict,
+):
+    """Test if the dbt manifest and run results are returned."""
+    manifest, run_results = ingest.download_dbt_artifacts_from_cloud(
+        "api_token", "account_id", "run_id"
+    )
+
+    assert dbt_manifest == manifest
+    assert dbt_run_results == run_results
