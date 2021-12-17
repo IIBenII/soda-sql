@@ -225,7 +225,7 @@ def download_dbt_artifact_from_cloud(
     api_token: str,
     account_id: str,
     run_id: str,
-) -> dict():
+) -> dict:
     """
     Download an artifact from the DBT cloud.
 
