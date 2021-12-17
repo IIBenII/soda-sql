@@ -120,37 +120,16 @@ def test_dbt_flush_test_results_soda_server_scan_test_result(
     assert test_results[0][column] == value
 
 
-@pytest.mark.parametrize(
-    "dbt_artifacts, dbt_manifest, dbt_run_results",
-    [
-        pytest.param(
-            None,
-            None,
-            Path("my_dbt_project/target/run_results.json"),
-            id="missing dbt_manifest and artifact",
-        ),
-        pytest.param(
-            None,
-            Path("my_dbt_project/target/manifest.json"),
-            None,
-            id="missing dbt_run_results and artifact",
-        ),
-    ],
-)
-def test_resolve_artifacts_paths_missing_paths(
-    dbt_artifacts, dbt_manifest, dbt_run_results
-):
-    with pytest.raises(ValueError):
-        dbt_manifest, dbt_run_results = ingest.load_dbt_artifacts(
-            dbt_artifacts, dbt_manifest, dbt_run_results
-        )
-
-
-def test_load_dbt_artifacts_given_artifacts_directory(
-    dbt_artifacts_directory: Path, dbt_manifest: dict, dbt_run_results: dict
+def test_load_dbt_artifacts_given_artifacts(
+    dbt_manifest_file: Path,
+    dbt_manifest: dict,
+    dbt_run_results_file: Path,
+    dbt_run_results: dict,
 ) -> None:
     """Test load dbt artifacts given an artifacts directory."""
-    manifest, run_results = ingest.load_dbt_artifacts(dbt_artifacts_directory)
+    manifest, run_results = ingest.load_dbt_artifacts(
+        dbt_manifest_file, dbt_run_results_file
+    )
     assert dbt_manifest == manifest
     assert dbt_run_results == run_results
 

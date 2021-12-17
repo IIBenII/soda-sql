@@ -174,20 +174,17 @@ def flush_test_results(
 
 
 def load_dbt_artifacts(
-    artifacts_dir: Path | None = None,
-    manifest_file: Path | None = None,
-    run_results_file: Path | None = None,
+    manifest_file: Path,
+    run_results_file: Path,
 ) -> tuple[dict, dict]:
     """
     Resolve artifacts.
 
     Arguments
     ---------
-    artifacts_dir : Path | None
-        The artifacts directory.
-    manifest_file : Path | None
+    manifest_file : Path
         The manifest file.
-    run_results_file : Path | None
+    run_results_file : Path
         The run results file.
 
     Return
@@ -195,28 +192,10 @@ def load_dbt_artifacts(
     out : tuple[dict, dict]
         The loaded manifest and run results.
     """
-    if artifacts_dir is not None:
-        manifest_file = artifacts_dir / "manifest.json"
-        run_results_file = artifacts_dir / "run_results.json"
-
-    if manifest_file is None or not manifest_file.is_file():
-        raise ValueError(
-            "--dbt-manifest or --dbt-artifacts are required to point to an  "
-            f"existing path. Currently, dbt_manifest={manifest_file} and "
-            f"dbt_artifacts={artifacts_dir}"
-        )
-    elif run_results_file is None or not run_results_file.is_file():
-        raise ValueError(
-            "--dbt-run-results or --dbt-artifacts are required to point to an  "
-            f"existing path. Currently, dbt_run_results={run_results_file} and "
-            f"dbt_artifacts={artifacts_dir}"
-        )
-
     with manifest_file.open("r") as file:
         manifest = json.load(file)
     with run_results_file.open("r") as file:
         run_results = json.load(file)
-
     return manifest, run_results
 
 
@@ -348,8 +327,22 @@ def ingest(
             or dbt_manifest is not None
             or dbt_run_results is not None
         ):
+            if dbt_artifacts is not None:
+                dbt_manifest = dbt_artifacts / "manifest.json"
+                dbt_run_results = dbt_artifacts / "run_results.json"
+
+            if dbt_manifest is None or not dbt_manifest.is_file():
+                raise ValueError(
+                    f"dbt manifest ({dbt_manifest}) or artifacts ({dbt_artifacts}) "
+                    "should point to an existing path."
+                )
+            elif dbt_run_results is None or not dbt_run_results.is_file():
+                raise ValueError(
+                    f"dbt run results ({dbt_run_results}) or artifacts ({dbt_artifacts}) "
+                    "should point to an existing path."
+                )
+
             manifest, run_results = load_dbt_artifacts(
-                dbt_artifacts,
                 dbt_manifest,
                 dbt_run_results,
             )
