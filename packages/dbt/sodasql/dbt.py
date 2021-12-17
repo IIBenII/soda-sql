@@ -1,4 +1,4 @@
-"""DBT integeration"""
+"""dbt integeration"""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def parse_manifest(
 
     dbt_v4_schema = "https://schemas.getdbt.com/dbt/manifest/v4.json"
     if manifest["metadata"]["dbt_schema_version"] != dbt_v4_schema:
-        logger.warning("Dbt manifest parsing only tested for v4 schema.")
+        logger.warning("dbt manifest parsing only tested for v4 schema.")
 
     model_nodes = {
         node_name: CompiledModelNode(**node)
@@ -114,7 +114,7 @@ def parse_run_results(run_results: dict[str, Any]) -> list[RunResultOutput]:
 
     dbt_v4_schema = "https://schemas.getdbt.com/dbt/run-results/v4.json"
     if run_results["metadata"]["dbt_schema_version"] != dbt_v4_schema:
-        logger.warning("Dbt run results parsing only tested for v4 schema.")
+        logger.warning("dbt run results parsing only tested for v4 schema.")
 
     parsed_run_results = [RunResultOutput(**result) for result in run_results["results"]]
     return parsed_run_results
