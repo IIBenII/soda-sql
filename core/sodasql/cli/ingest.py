@@ -355,17 +355,11 @@ def ingest(
             )
         else:
             if dbt_cloud_api_token is None:
-                raise ValueError(
-                    f"Expecting an DBT cloud api token. Currently, dbt_cloud_api_token={dbt_cloud_api_token}."
-                )
+                raise ValueError(f"Expecting an DBT cloud api token: {dbt_cloud_api_token}")
             elif dbt_cloud_account_id is None:
-                raise ValueError(
-                    f"Expecting an DBT cloud api token. Currently, dbt_cloud_account_id={dbt_cloud_account_id}."
-                )
+                raise ValueError(f"Expecting an DBT cloud account id: {dbt_cloud_account_id}")
             elif dbt_cloud_run_id is None:
-                raise ValueError(
-                    f"Expecting an DBT cloud api token. Currently, dbt_cloud_run_id={dbt_cloud_run_id}."
-                )
+                raise ValueError(f"Expecting an DBT cloud job run id: {dbt_cloud_run_id}")
             manifest, run_results = download_dbt_artifacts_from_cloud(
                 dbt_cloud_api_token, dbt_cloud_account_id, dbt_cloud_run_id
             )
