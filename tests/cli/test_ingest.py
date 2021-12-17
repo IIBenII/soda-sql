@@ -146,6 +146,15 @@ def test_resolve_artifacts_paths_missing_paths(
         )
 
 
+def test_load_dbt_artifacts_given_artifacts_directory(
+    dbt_artifacts_directory: Path, dbt_manifest: dict, dbt_run_results: dict
+) -> None:
+    """Test load dbt artifacts given an artifacts directory."""
+    manifest, run_results = ingest.load_dbt_artifacts(dbt_artifacts_directory)
+    assert dbt_manifest == manifest
+    assert dbt_run_results == run_results
+
+
 @pytest.fixture
 def mock_dbt_cloud_response(
     monkeypatch: MonkeyPatch,
