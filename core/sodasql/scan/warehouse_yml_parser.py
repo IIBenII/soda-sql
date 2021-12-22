@@ -83,7 +83,9 @@ class WarehouseYmlParser(Parser):
 
             ingest_dict = self.get_dict_optional(KEY_INGEST)
             if ingest_dict:
+                self._push_context(object=ingest_dict, name=KEY_INGEST)
                 self.warehouse_yml.dbt_cloud_api_token = self.get_str_optional(DBT_CLOUD_KEY_API_TOKEN)
+                self._pop_context()
 
             self.check_invalid_keys(VALID_WAREHOUSE_KEYS)
 
