@@ -525,12 +525,7 @@ def scan(scan_yml_file: str, warehouse_yml_file: str, variables: tuple, time: st
     default=None,
     type=Path,
 )
-@click.option(
-    "--dbt-cloud-api-token",
-    help="The token to access the dbt cloud API",
-    default=None,
-    type=Path,
-)
+
 @click.option(
     "--dbt-cloud-account-id",
     help="The id of your dbt cloud account",

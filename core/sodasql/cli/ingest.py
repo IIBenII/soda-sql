@@ -279,7 +279,6 @@ def ingest(
     dbt_artifacts: Path | None = None,
     dbt_manifest: Path | None = None,
     dbt_run_results: Path | None = None,
-    dbt_cloud_api_token: str | None = None,
     dbt_cloud_account_id: str | None = None,
     dbt_cloud_run_id: str | None = None,
 ) -> None:
@@ -299,8 +298,6 @@ def ingest(
         The path to the dbt manifest.
     dbt_run_results : Optional[Path]
         The path to the dbt run results.
-    dbt_cloud_api_token : str
-        The dbt cloud API token.
     dbt_cloud_account_id: str :
         The id of a dbt cloud account.
     dbt_cloud_run_id :  str
@@ -347,6 +344,7 @@ def ingest(
                 dbt_run_results,
             )
         else:
+            dbt_cloud_api_token = warehouse_yml.dbt_cloud_api_token
             error_values = [dbt_cloud_api_token, dbt_cloud_account_id, dbt_cloud_run_id]
             error_messages = [
                 f"Expecting a dbt cloud api token: {dbt_cloud_api_token}",
